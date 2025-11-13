@@ -5,3 +5,5 @@ My Dropdown
 
 An attempt at creating a dropdown list for Jetpack Compose, that would look and work better than a simple method of creating such an element in Jetpack Compose (With a button and a DropdownMenu).
 For now the visual glitches make it not suitable for use in a real app.
+
+<img src="https://github.com/StarMage27/MyDropdown/blob/master/MyDropdown.png" width="200"  alt="Showcase of dropdown list"/>
