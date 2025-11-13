@@ -1,6 +1,5 @@
 package io.github.starmage27.mydropdown
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.BorderStroke
@@ -20,12 +19,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
@@ -35,6 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -45,49 +47,46 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import kotlin.math.roundToInt
-
 
 @Composable
 fun MyDropdown(
     modifier: Modifier = Modifier,
-    options: List<String>,
-    selected: String,
-    onValueChange: (String) -> Unit = { _ -> },
     expanded: Boolean,
+    options: List<String>,
+    onValueChange: (String) -> Unit = { _ -> },
     onExpandedChange: (Boolean) -> Unit = { _ -> },
+    selected: String,
+    enabled: Boolean = true,
+    shape: Shape = RectangleShape,
+    color: Color = MaterialTheme.colorScheme.surface,
+    contentColor: Color = contentColorFor(color),
+    tonalElevation: Dp = 0.dp,
+    shadowElevation: Dp = 0.dp,
+    border: BorderStroke? = null,
+    minHeight: Dp = 36.dp,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
     val density = LocalDensity.current
-    val toPX: Dp.() -> Int = { (this.value * density.density).roundToInt() }
+    val interactionSource = remember { MutableInteractionSource() }
     val toDP: Int.() -> Dp = { (this / density.density).dp }
-
-    val minHeight = 36.dp
-    val minHeightPx = minHeight.toPX()
 
     val expandAnimation = animateFloatAsState(
         targetValue = if (expanded) 1f else 0f
     )
-
-    val heightAnimation = animateDpAsState(
-        targetValue = if (expanded) minHeight * (options.size + 1) else minHeight,
-    )
+    val optionsVisible = expandAnimation.value != 0f
 
     val widthPx = remember { mutableIntStateOf(128) }
     val widthAnimationPx = animateIntAsState(targetValue = widthPx.intValue)
-
-    val optionsVisible = expandAnimation.value != 0f
 
     val dropdownBackground: @Composable (content: @Composable (modifier: Modifier) -> Unit) -> Unit = @Composable
     { content ->
         Surface(
             modifier = modifier
-                .widthIn(min = widthAnimationPx.value.toDP() * expandAnimation.value )
-                .height(heightAnimation.value)
+                .widthIn(min = widthAnimationPx.value.toDP() * expandAnimation.value)
+                .height(minHeight * ((options.size * expandAnimation.value) + 1))
                 .clipToBounds()
-                .clip(RoundedCornerShape(8.dp))
+                .clip(shape)
                 .clickable(
-                    enabled = true,
+                    enabled = enabled,
                     interactionSource = interactionSource,
                     indication = ripple(),
                     onClickLabel = "",
@@ -97,11 +96,12 @@ fun MyDropdown(
                     },
                 )
             ,
-            shape = RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 4.dp,
-            shadowElevation = 4.dp,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            shape = shape,
+            color = color,
+            contentColor = contentColor,
+            tonalElevation = tonalElevation,
+            shadowElevation = shadowElevation,
+            border = border,
         ) {
             Column(
                 modifier = Modifier
@@ -222,7 +222,7 @@ fun MyDropdown(
 
         layout(
             width = widthAnimationPx.value,
-            height = minHeightPx
+            height = with(density) { minHeight.toPx().toInt() }
         ) {
             placeables.forEach { placeable ->
                 placeable.placeRelative(0, 0)
